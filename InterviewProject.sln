@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30621.155
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IPInfoProviderLibrary", "InterviewProject\IPInfoProviderLibrary.csproj", "{DA5FB593-2F42-4A97-B02A-CD3C1741125C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IPInfoWebAPI", "IPInfoWebAPI\IPInfoWebAPI.csproj", "{6684BF45-B25A-4FB7-B132-A94F6E805B65}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DA5FB593-2F42-4A97-B02A-CD3C1741125C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DA5FB593-2F42-4A97-B02A-CD3C1741125C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DA5FB593-2F42-4A97-B02A-CD3C1741125C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DA5FB593-2F42-4A97-B02A-CD3C1741125C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6684BF45-B25A-4FB7-B132-A94F6E805B65}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6684BF45-B25A-4FB7-B132-A94F6E805B65}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6684BF45-B25A-4FB7-B132-A94F6E805B65}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6684BF45-B25A-4FB7-B132-A94F6E805B65}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7C885E4D-4865-4AAC-8878-69F1E41067FA}
+	EndGlobalSection
+EndGlobal
