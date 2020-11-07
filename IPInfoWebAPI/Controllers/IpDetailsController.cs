@@ -5,6 +5,9 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using IPInfoWebAPI.Models;
+using IPInfoProviderLibrary;
+using IPInfoWebAPI.Repositories;
+using IPInfoWebAPI.Services;
 
 namespace IPInfoWebAPI.Controllers
 {
@@ -13,40 +16,64 @@ namespace IPInfoWebAPI.Controllers
     public class IpDetailsController : ControllerBase
     {
         private readonly IpInformationsContext _context;
+        private readonly IIPRequestHandlerService IPRequestHandlerService;
+        private readonly IIPDetailsRepository IPDetailsRepository;
 
-        public IpDetailsController(IpInformationsContext context)
+        public IpDetailsController(IpInformationsContext context, IIPRequestHandlerService iPRequestHandlerService, IIPDetailsRepository iPDetailsRepository)
         {
             _context = context;
+            IPRequestHandlerService = iPRequestHandlerService;
+            IPDetailsRepository = iPDetailsRepository;
         }
 
         // GET: api/IpDetails
         [HttpGet]
         public async Task<ActionResult<IEnumerable<IpDetail>>> GetIpdetails()
         {
-            return await _context.Ipdetails.ToListAsync();
+            return Ok(await IPDetailsRepository.GetIpDetailsAsync());
         }
 
-        // GET: api/IpDetails/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<IpDetail>> GetIpDetail(int id)
+        // GET: api/IpDetails/192.168.1.1
+        [HttpGet("{ip}")]
+        public async Task<ActionResult<IpDetail>> GetIpDetail(string ip)
         {
-            var ipDetail = await _context.Ipdetails.FindAsync(id);
-
-            if (ipDetail == null)
+            try
             {
+                var ipDetailsFromCache = IPRequestHandlerService.CheckCacheForIp(ip);
+                if (ipDetailsFromCache != null)
+                {
+                    return Ok(ipDetailsFromCache);
+                }
+
+                var ipDetailsFromDb = await IPDetailsRepository.GetIpDetailAsync(ip);
+                if (ipDetailsFromDb != null)
+                {
+                    return ipDetailsFromDb;
+                }
+
+                var ipDetailsFromLibrary = IPRequestHandlerService.CheckLibraryForIP(ip);
+                if (ipDetailsFromLibrary != null)
+                {
+                    await IPDetailsRepository.AddIpDetailsAsync(ipDetailsFromLibrary.Result);
+                    await IPRequestHandlerService.UpdateCache(ipDetailsFromLibrary.Result);
+                    return Ok(ipDetailsFromLibrary.Result);
+                }
+
                 return NotFound();
             }
-
-            return ipDetail;
+            catch (Exception)
+            {
+                return StatusCode(Microsoft.AspNetCore.Http.StatusCodes.Status500InternalServerError);
+            }
         }
 
-        // PUT: api/IpDetails/5
+        // PUT: api/IpDetails/192.168.1.1
         // To protect from overposting attacks, enable the specific properties you want to bind to, for
         // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutIpDetail(int id, IpDetail ipDetail)
+        [HttpPut("{ip}")]
+        public async Task<IActionResult> PutIpDetail(string ip, IpDetail ipDetail)
         {
-            if (id != ipDetail.Id)
+            if (ip != ipDetail.Ip)
             {
                 return BadRequest();
             }
@@ -59,7 +86,7 @@ namespace IPInfoWebAPI.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!IpDetailExists(id))
+                if (!IpDetailExists(ip))
                 {
                     return NotFound();
                 }
@@ -78,14 +105,13 @@ namespace IPInfoWebAPI.Controllers
         [HttpPost]
         public async Task<ActionResult<IpDetail>> PostIpDetail(IpDetail ipDetail)
         {
-            _context.Ipdetails.Add(ipDetail);
             try
             {
-                await _context.SaveChangesAsync();
+                await IPDetailsRepository.AddIpDetailsAsync(ipDetail);
             }
             catch (DbUpdateException)
             {
-                if (IpDetailExists(ipDetail.Id))
+                if (IpDetailExists(ipDetail.Ip))
                 {
                     return Conflict();
                 }
@@ -95,14 +121,14 @@ namespace IPInfoWebAPI.Controllers
                 }
             }
 
-            return CreatedAtAction("GetIpDetail", new { id = ipDetail.Id }, ipDetail);
+            return CreatedAtAction("GetIpDetail", new { id = ipDetail.Ip }, ipDetail);
         }
 
-        // DELETE: api/IpDetails/5
-        [HttpDelete("{id}")]
-        public async Task<ActionResult<IpDetail>> DeleteIpDetail(int id)
+        // DELETE: api/IpDetails/192.168.1.1
+        [HttpDelete("{ip}")]
+        public async Task<ActionResult<IpDetail>> DeleteIpDetail(string ip)
         {
-            var ipDetail = await _context.Ipdetails.FindAsync(id);
+            var ipDetail = await _context.Ipdetails.FindAsync(ip);
             if (ipDetail == null)
             {
                 return NotFound();
@@ -114,9 +140,9 @@ namespace IPInfoWebAPI.Controllers
             return ipDetail;
         }
 
-        private bool IpDetailExists(int id)
+        private bool IpDetailExists(string ip)
         {
-            return _context.Ipdetails.Any(e => e.Id == id);
+            return _context.Ipdetails.Any(e => e.Ip == ip);
         }
     }
 }
