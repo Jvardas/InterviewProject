@@ -21,14 +21,14 @@ namespace IPInfoProviderLibrary
                 using StreamReader reader = new StreamReader(stream);
                 string json = reader.ReadToEnd();
                 var jobj = JObject.Parse(json);
-
+                
                 IP ipd = new IP()
                 {
                     City = (string)jobj["city"],
                     Country = (string)jobj["country_name"],
                     Continent = (string)jobj["continent_name"],
-                    Latitude = (string)jobj["latitude"],
-                    Longtitude = (string)jobj["longitude"]
+                    Latitude = (double)jobj["latitude"],
+                    Longitude = (double)jobj["longitude"]
                 };
 
                 return ipd;

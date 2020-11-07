@@ -8,7 +8,7 @@ namespace IPInfoProviderLibrary
         {
         }
 
-        public IPServiceNotAvailableException(string message) : base($"IPService responds with {message}")
+        public IPServiceNotAvailableException(string message) : base($"IPService responded with {message}")
         {
 
         }
