@@ -26,7 +26,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\IPInfoProviderLibrary\IPInfoProviderLibrary.csproj" />
-    <ProjectReference Include="..\IPInfos\IPInfos.sqlproj" />
   </ItemGroup>
 
 
