@@ -2,10 +2,10 @@
 {
     interface IIPInfoProvider
     {
-        IPDetails GetDetails(string Ip);
+        IPDetails GetDetails(string ip);
     }
 
-    interface IPDetails
+    public interface IPDetails
     {
         string City { get; set; }
         string Country { get; set; }
