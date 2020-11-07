@@ -20,6 +20,12 @@ namespace IPInfoWebAPI.Models
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<IpDetail>(entity =>
+            {
+                entity.HasKey(e => e.Ip)
+                    .HasName("PK__IPDetail__3214EC2B3DCC555C");
+            });
+
             OnModelCreatingPartial(modelBuilder);
         }
 

@@ -10,7 +10,9 @@ namespace IPInfoWebAPI.Models
     public partial class IpDetail
     {
         [Key]
-        public int Id { get; set; }
+        [Column("IP")]
+        [StringLength(100)]
+        public string Ip { get; set; }
         [StringLength(100)]
         public string City { get; set; }
         [StringLength(100)]
