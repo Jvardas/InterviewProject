@@ -1,15 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using AutoMapper;
+using IPInfoProviderLibrary;
+using IPInfoWebAPI.Mappings;
+using IPInfoWebAPI.Models;
+using IPInfoWebAPI.Repositories;
+using IPInfoWebAPI.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 namespace IPInfoWebAPI
 {
@@ -25,7 +25,31 @@ namespace IPInfoWebAPI
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            // register my database connection
+            services.AddDbContext<IpInformationsContext>(options =>
+                options.UseSqlServer(Configuration.GetConnectionString("IpInformationsDatabase")));
+            // register IPInfoProvider DLL
+            services.AddSingleton<IIPInfoProvider, IPInfoProvider>(); 
+            // resolve all the repositories and services
+            services.AddScoped<IIPDetailsRepository, IPDetailsRepository>();
+            services.AddScoped<IIPRequestHandlerService, IPRequestHandlerService>();
+
+            // AutoMapper configuration
+            var mapperConfig = new MapperConfiguration(mc =>
+            {
+                mc.AddProfile(new AutoMapping());
+            });
+
+            IMapper mapper = mapperConfig.CreateMapper();
+            services.AddSingleton(mapper);
+
+            services.AddMemoryCache();
+
             services.AddControllers();
+            // make Newtonsoft to configure the ReferenceLoopHandling
+            //services.AddControllers().AddNewtonsoftJson(options =>
+            //    options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+            //);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
