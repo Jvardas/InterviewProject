@@ -2,6 +2,8 @@
 using IPInfoWebAPI.Models;
 using Microsoft.Extensions.Caching.Memory;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -82,6 +84,16 @@ namespace IPInfoWebAPI.Services
             }
 
             return ip;
+        }
+
+        public async Task<IEnumerable<IpDetail>> UpdateManyCacheAsync(IEnumerable<IpDetail> ips)
+        {
+            foreach (var ipd in ips)
+            {
+                await UpdateCacheAsync(ipd);
+            }
+
+            return ips;
         }
     }
 }

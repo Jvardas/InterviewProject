@@ -33,6 +33,8 @@ namespace IPInfoWebAPI
             // resolve all the repositories and services
             services.AddScoped<IIPDetailsRepository, IPDetailsRepository>();
             services.AddScoped<IIPRequestHandlerService, IPRequestHandlerService>();
+            services.AddScoped<IBatchRequestHandlerService, BatchRequestHandlerService>();
+            services.AddSingleton<IBatchJobHelperService, BatchJobHelperService>();
 
             // AutoMapper configuration
             var mapperConfig = new MapperConfiguration(mc =>
