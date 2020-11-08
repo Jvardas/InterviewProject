@@ -1,4 +1,6 @@
+using AutoMapper;
 using IPInfoProviderLibrary;
+using IPInfoWebAPI.Mappings;
 using IPInfoWebAPI.Models;
 using IPInfoWebAPI.Repositories;
 using IPInfoWebAPI.Services;
@@ -32,6 +34,18 @@ namespace IPInfoWebAPI
             services.AddScoped<IIPDetailsRepository, IPDetailsRepository>();
             services.AddScoped<IIPRequestHandlerService, IPRequestHandlerService>();
 
+            // AutoMapper configuration
+            var mapperConfig = new MapperConfiguration(mc =>
+            {
+                mc.AddProfile(new AutoMapping());
+            });
+
+            IMapper mapper = mapperConfig.CreateMapper();
+            services.AddSingleton(mapper);
+
+            services.AddMemoryCache();
+
+            // make Newtonsoft to configure the ReferenceLoopHandling
             services.AddControllers().AddNewtonsoftJson(options =>
                 options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
             );
