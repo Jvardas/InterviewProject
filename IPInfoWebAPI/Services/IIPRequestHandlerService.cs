@@ -6,7 +6,7 @@ namespace IPInfoWebAPI.Services
     public interface IIPRequestHandlerService
     {
         IpDetail CheckCacheForIp(string ip);
-        IpDetail UpdateCache(IpDetail ip);
-        Task<IpDetail> CheckLibraryForIP(string ip);
+        Task<IpDetail> UpdateCacheAsync(IpDetail ip);
+        Task<IpDetail> CheckLibraryForIPAsync(string ip);
     }
 }

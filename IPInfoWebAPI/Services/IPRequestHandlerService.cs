@@ -2,24 +2,27 @@
 using IPInfoWebAPI.Models;
 using Microsoft.Extensions.Caching.Memory;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace IPInfoWebAPI.Services
 {
     public class IPRequestHandlerService : IIPRequestHandlerService
     {
-        private readonly IIPInfoProvider IPInfoProvider;
-        private readonly IMemoryCache MemoryCache;
+        private readonly IIPInfoProvider _ipInfoProvider;
+        private readonly IMemoryCache _memoryCache;
 
-        public IPRequestHandlerService(IIPInfoProvider iPInfoProvider, IMemoryCache memoryCache)
+        private static readonly SemaphoreSlim GetSemaphore = new SemaphoreSlim(1, 1);
+
+        public IPRequestHandlerService(IIPInfoProvider ipInfoProvider, IMemoryCache memoryCache)
         {
-            IPInfoProvider = iPInfoProvider;
-            MemoryCache = memoryCache;
+            _ipInfoProvider = ipInfoProvider;
+            _memoryCache = memoryCache;
         }
 
         public IpDetail CheckCacheForIp(string ip)
         {
-            var ipd = MemoryCache.Get<IpDetail>(ip);
+            var ipd = _memoryCache.Get<IpDetail>(ip);
             if (ipd != null)
             {
                 return ipd;
@@ -30,35 +33,55 @@ namespace IPInfoWebAPI.Services
             }
         }
 
-        public async Task<IpDetail> CheckLibraryForIP(string ip)
+        public async Task<IpDetail> CheckLibraryForIPAsync(string ip)
         {
-            var ipd = IPInfoProvider.GetDetails(ip);
-            if (ipd != null)
+            return await Task.Run(() =>
             {
-                var ipDetail = new IpDetail
+                var ipd = _ipInfoProvider.GetDetails(ip);
+                if (ipd != null)
                 {
-                    Ip = ip,
-                    City = ipd.City,
-                    Country = ipd.Country,
-                    Continent = ipd.Continent,
-                    Latitude = (decimal?)ipd.Latitude,
-                    Longitude = (decimal?)ipd.Longitude
-                };
+                    var ipDetail = new IpDetail
+                    {
+                        Ip = ip,
+                        City = ipd.City,
+                        Country = ipd.Country,
+                        Continent = ipd.Continent,
+                        Latitude = (decimal?)ipd.Latitude,
+                        Longitude = (decimal?)ipd.Longitude
+                    };
 
-                return ipDetail;
-            }
-            else
-            {
-                return null;
-            }
+                    return ipDetail;
+                }
+                else
+                {
+                    return null;
+                }
+            });
         }
 
-        public IpDetail UpdateCache(IpDetail ip)
+        public async Task<IpDetail> UpdateCacheAsync(IpDetail ip)
         {
+            // with the sliding expiration the key will expire if noone access it, but if someone does access it then it will stay for another minute in memory
             var cacheEntryOptions = new MemoryCacheEntryOptions()
                     .SetSlidingExpiration(TimeSpan.FromSeconds(60));
-    
-            return MemoryCache.Set(ip.Ip, ip, cacheEntryOptions);
+
+            try
+            {
+                await GetSemaphore.WaitAsync();
+                var ipd = CheckCacheForIp(ip.Ip); // Recheck to make sure it didn't populate before entering semaphore
+                if (ipd != null)
+                {
+                    return ipd;
+                }
+
+                _memoryCache.Set(ip.Ip, ip, cacheEntryOptions);
+            }
+            finally
+            {
+                GetSemaphore.Release();
+            }
+
+            return ip;
         }
     }
 }
