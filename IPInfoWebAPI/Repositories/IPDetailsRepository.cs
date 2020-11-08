@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace IPInfoWebAPI.Repositories
@@ -32,9 +33,29 @@ namespace IPInfoWebAPI.Repositories
             return await _context.Ipdetails.ToListAsync();
         }
 
-        public Task<bool> UpdateIpDetailAsync(IpDetail ipDetail)
+        public async Task<IEnumerable<IpDetail>> UpdateIpDetailsAsync(IEnumerable<IpDetail> ipDetails)
         {
-            throw new NotImplementedException();
+            try
+            {
+                foreach (var ipd in ipDetails)
+                {
+                    if (_context.Ipdetails.Any(e => e.Ip == ipd.Ip))
+                    {
+                        _context.Entry(ipd).State = EntityState.Modified;
+                    }
+                    else
+                    {
+                        _context.Ipdetails.Add(ipd);
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                return ipDetails;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
         }
     }
 }
