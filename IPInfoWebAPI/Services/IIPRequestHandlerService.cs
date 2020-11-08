@@ -5,8 +5,8 @@ namespace IPInfoWebAPI.Services
 {
     public interface IIPRequestHandlerService
     {
-        Task<IpDetail> CheckCacheForIp(string ip);
-        Task<bool> UpdateCache(IpDetail ip);
+        IpDetail CheckCacheForIp(string ip);
+        IpDetail UpdateCache(IpDetail ip);
         Task<IpDetail> CheckLibraryForIP(string ip);
     }
 }

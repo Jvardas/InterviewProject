@@ -1,13 +1,14 @@
-﻿using System;
+﻿using AutoMapper;
+using IPInfoWebAPI.DataTransferObjects;
+using IPInfoWebAPI.Models;
+using IPInfoWebAPI.Repositories;
+using IPInfoWebAPI.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using IPInfoWebAPI.Models;
-using IPInfoProviderLibrary;
-using IPInfoWebAPI.Repositories;
-using IPInfoWebAPI.Services;
 
 namespace IPInfoWebAPI.Controllers
 {
@@ -15,48 +16,67 @@ namespace IPInfoWebAPI.Controllers
     [ApiController]
     public class IpDetailsController : ControllerBase
     {
-        private readonly IpInformationsContext _context;
+        private readonly IpInformationsContext Context;
         private readonly IIPRequestHandlerService IPRequestHandlerService;
         private readonly IIPDetailsRepository IPDetailsRepository;
+        private readonly IMapper Mapper;
 
-        public IpDetailsController(IpInformationsContext context, IIPRequestHandlerService iPRequestHandlerService, IIPDetailsRepository iPDetailsRepository)
+        public IpDetailsController(IpInformationsContext context, IIPRequestHandlerService iPRequestHandlerService, IIPDetailsRepository iPDetailsRepository, IMapper mapper)
         {
-            _context = context;
+            Context = context;
             IPRequestHandlerService = iPRequestHandlerService;
             IPDetailsRepository = iPDetailsRepository;
+            Mapper = mapper;
         }
 
         // GET: api/IpDetails
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<IpDetail>>> GetIpdetails()
+        public async Task<ActionResult<IEnumerable<IpDetailDTO>>> GetIpdetails()
         {
-            return Ok(await IPDetailsRepository.GetIpDetailsAsync());
+            List<IpDetailDTO> ipList = new List<IpDetailDTO>();
+            
+            var ips = await IPDetailsRepository.GetIpDetailsAsync();
+            List<IpDetail> ipd = ips.ToList();
+            foreach (var ip in ipd)
+            {
+                ipList.Add(Mapper.Map<IpDetailDTO>(ip));
+            }
+
+            return ipList;
         }
 
         // GET: api/IpDetails/192.168.1.1
         [HttpGet("{ip}")]
-        public async Task<ActionResult<IpDetail>> GetIpDetail(string ip)
+        public async Task<ActionResult<IpDetailDTO>> GetIpDetail(string ip)
         {
             try
             {
                 var ipDetailsFromCache = IPRequestHandlerService.CheckCacheForIp(ip);
                 if (ipDetailsFromCache != null)
                 {
-                    return Ok(ipDetailsFromCache);
+                    var ipdDTO = Mapper.Map<IpDetailDTO>(ipDetailsFromCache);
+                    return ipdDTO;
                 }
 
                 var ipDetailsFromDb = await IPDetailsRepository.GetIpDetailAsync(ip);
                 if (ipDetailsFromDb != null)
                 {
-                    return ipDetailsFromDb;
+                    IPRequestHandlerService.UpdateCache(ipDetailsFromDb);
+                    var ipdDTO = Mapper.Map<IpDetailDTO>(ipDetailsFromDb);
+                    return ipdDTO;
                 }
 
                 var ipDetailsFromLibrary = IPRequestHandlerService.CheckLibraryForIP(ip);
-                if (ipDetailsFromLibrary != null)
+                if (ipDetailsFromLibrary.Result != null && ipDetailsFromLibrary.Exception == null)
                 {
                     await IPDetailsRepository.AddIpDetailsAsync(ipDetailsFromLibrary.Result);
-                    await IPRequestHandlerService.UpdateCache(ipDetailsFromLibrary.Result);
-                    return Ok(ipDetailsFromLibrary.Result);
+                    IPRequestHandlerService.UpdateCache(ipDetailsFromLibrary.Result);
+                    var ipdDTO = Mapper.Map<IpDetailDTO>(ipDetailsFromLibrary.Result);
+                    return ipdDTO;
+                }
+                else if(ipDetailsFromLibrary.Exception != null)
+                {
+                    throw new Exception();
                 }
 
                 return NotFound();
@@ -78,11 +98,11 @@ namespace IPInfoWebAPI.Controllers
                 return BadRequest();
             }
 
-            _context.Entry(ipDetail).State = EntityState.Modified;
+            Context.Entry(ipDetail).State = EntityState.Modified;
 
             try
             {
-                await _context.SaveChangesAsync();
+                await Context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -103,7 +123,7 @@ namespace IPInfoWebAPI.Controllers
         // To protect from overposting attacks, enable the specific properties you want to bind to, for
         // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
         [HttpPost]
-        public async Task<ActionResult<IpDetail>> PostIpDetail(IpDetail ipDetail)
+        public async Task<ActionResult<IpDetailDTO>> PostIpDetail(IpDetail ipDetail)
         {
             try
             {
@@ -126,23 +146,23 @@ namespace IPInfoWebAPI.Controllers
 
         // DELETE: api/IpDetails/192.168.1.1
         [HttpDelete("{ip}")]
-        public async Task<ActionResult<IpDetail>> DeleteIpDetail(string ip)
+        public async Task<ActionResult<IpDetailDTO>> DeleteIpDetail(string ip)
         {
-            var ipDetail = await _context.Ipdetails.FindAsync(ip);
+            var ipDetail = await Context.Ipdetails.FindAsync(ip);
             if (ipDetail == null)
             {
                 return NotFound();
             }
 
-            _context.Ipdetails.Remove(ipDetail);
-            await _context.SaveChangesAsync();
-
-            return ipDetail;
+            Context.Ipdetails.Remove(ipDetail);
+            await Context.SaveChangesAsync();
+            var ipdDTO = Mapper.Map<IpDetailDTO>(ipDetail);
+            return ipdDTO;
         }
 
         private bool IpDetailExists(string ip)
         {
-            return _context.Ipdetails.Any(e => e.Ip == ip);
+            return Context.Ipdetails.Any(e => e.Ip == ip);
         }
     }
 }

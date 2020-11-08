@@ -1,9 +1,7 @@
 ﻿using IPInfoProviderLibrary;
 using IPInfoWebAPI.Models;
-using IPInfoWebAPI.Repositories;
+using Microsoft.Extensions.Caching.Memory;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace IPInfoWebAPI.Services
@@ -11,15 +9,25 @@ namespace IPInfoWebAPI.Services
     public class IPRequestHandlerService : IIPRequestHandlerService
     {
         private readonly IIPInfoProvider IPInfoProvider;
+        private readonly IMemoryCache MemoryCache;
 
-        public IPRequestHandlerService(IIPInfoProvider iPInfoProvider)
+        public IPRequestHandlerService(IIPInfoProvider iPInfoProvider, IMemoryCache memoryCache)
         {
             IPInfoProvider = iPInfoProvider;
+            MemoryCache = memoryCache;
         }
 
-        public async Task<IpDetail> CheckCacheForIp(string ip)
+        public IpDetail CheckCacheForIp(string ip)
         {
-            throw new NotImplementedException();
+            var ipd = MemoryCache.Get<IpDetail>(ip);
+            if (ipd != null)
+            {
+                return ipd;
+            }
+            else
+            {
+                return null;
+            }
         }
 
         public async Task<IpDetail> CheckLibraryForIP(string ip)
@@ -45,9 +53,12 @@ namespace IPInfoWebAPI.Services
             }
         }
 
-        public async Task<bool> UpdateCache(IpDetail ip)
+        public IpDetail UpdateCache(IpDetail ip)
         {
-            throw new NotImplementedException();
+            var cacheEntryOptions = new MemoryCacheEntryOptions()
+                    .SetSlidingExpiration(TimeSpan.FromSeconds(60));
+    
+            return MemoryCache.Set(ip.Ip, ip, cacheEntryOptions);
         }
     }
 }

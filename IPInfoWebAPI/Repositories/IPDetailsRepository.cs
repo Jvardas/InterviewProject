@@ -10,30 +10,28 @@ namespace IPInfoWebAPI.Repositories
 {
     public class IPDetailsRepository : IIPDetailsRepository
     {
-        private readonly IpInformationsContext _context;
+        private readonly IpInformationsContext Context;
 
         public IPDetailsRepository(IpInformationsContext context)
         {
-            _context = context;
+            Context = context;
         }
 
         public async Task<int> AddIpDetailsAsync(IpDetail ipDetail)
         {
-            _context.Ipdetails.Add(ipDetail);
+            Context.Ipdetails.Add(ipDetail);
 
-            return await _context.SaveChangesAsync();
+            return await Context.SaveChangesAsync();
         }
 
         public async Task<IpDetail> GetIpDetailAsync(string ip)
         {
-            var ipDetail = await _context.Ipdetails.FindAsync(ip);
-
-            return ipDetail;
+            return await Context.Ipdetails.FindAsync(ip);
         }
 
         public async Task<IEnumerable<IpDetail>> GetIpDetailsAsync()
         {
-            return await _context.Ipdetails.ToListAsync();
+            return await Context.Ipdetails.ToListAsync();
         }
 
         public Task<bool> UpdateIpDetailAsync(IpDetail ipDetail)
