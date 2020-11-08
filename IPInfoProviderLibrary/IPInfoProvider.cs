@@ -21,14 +21,22 @@ namespace IPInfoProviderLibrary
                 using StreamReader reader = new StreamReader(stream);
                 string json = reader.ReadToEnd();
                 var jobj = JObject.Parse(json);
+
+                // ensure that the conversion will return actuall numbers instead of null. This is made because the Project specifically mentioned that I have to use the interface as is.
+                // A better way I think was to just have lat and lon as double? in the interface
+                double lat = 0.0;
+                Double.TryParse(jobj["latitude"].ToString(), out lat);
                 
+                double lon = 0.0;
+                Double.TryParse(jobj["longitude"].ToString(), out lon);
+
                 IP ipd = new IP()
                 {
                     City = (string)jobj["city"],
                     Country = (string)jobj["country_name"],
                     Continent = (string)jobj["continent_name"],
-                    Latitude = (double)jobj["latitude"],
-                    Longitude = (double)jobj["longitude"]
+                    Latitude = lat,
+                    Longitude = lon
                 };
 
                 return ipd;
