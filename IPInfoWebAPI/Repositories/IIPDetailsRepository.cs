@@ -9,6 +9,6 @@ namespace IPInfoWebAPI.Repositories
         Task<IEnumerable<IpDetail>> GetIpDetailsAsync();
         Task<IpDetail> GetIpDetailAsync(string ip);
         Task<int> AddIpDetailsAsync(IpDetail ipDetail);
-        Task<IEnumerable<IpDetail>> UpdateIpDetailsAsync(IEnumerable<IpDetail> ipDetails);
+        Task UpdateIpDetailsAsync(IEnumerable<IpDetail> ipDetails);
     }
 }

@@ -1,5 +1,4 @@
-﻿using AutoMapper.Internal;
-using IPInfoWebAPI.Models;
+﻿using IPInfoWebAPI.Models;
 using IPInfoWebAPI.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -11,22 +10,22 @@ namespace IPInfoWebAPI.Services
 {
     public class BatchRequestHandlerService : IBatchRequestHandlerService
     {
-        private readonly IBatchJobHelperService _batchJobHelperService;
-        private readonly IIPRequestHandlerService _ipRequestHandlerService;
-        private readonly IServiceScopeFactory _serviceScopeFactory;
+        private IBatchJobHelperService BatchJobHelperService { get; }
+        private IIPRequestHandlerService IpRequestHandlerService { get; }
+        private IServiceScopeFactory ServiceScopeFactory { get; }
 
         private const int batchSize = 10;
 
         public BatchRequestHandlerService(IBatchJobHelperService batchJobHelperService, IIPRequestHandlerService ipRequestHandlerService, IServiceScopeFactory serviceScopeFactory)
         {
-            _batchJobHelperService = batchJobHelperService;
-            _ipRequestHandlerService = ipRequestHandlerService;
-            _serviceScopeFactory = serviceScopeFactory;
+            BatchJobHelperService = batchJobHelperService;
+            IpRequestHandlerService = ipRequestHandlerService;
+            ServiceScopeFactory = serviceScopeFactory;
         }
 
         public string GetUpdateJobProgress(Guid updateJobGuid)
         {
-            return _batchJobHelperService.GetJobProgress(updateJobGuid);
+            return BatchJobHelperService.GetJobProgress(updateJobGuid);
         }
 
         public Guid IpDetailsUpdateJob(IEnumerable<IpDetail> ipDetails)
@@ -34,11 +33,11 @@ namespace IPInfoWebAPI.Services
             Guid guid = Guid.NewGuid();
 
             // initialize the progress
-            _batchJobHelperService.UpdateJobProgress(guid, $"0/{ipDetails.Count()}");
+            BatchJobHelperService.UpdateJobProgress(guid, $"0/{ipDetails.Count()}");
 
             var t = Task.Run(async () =>
             {
-                using var scope = _serviceScopeFactory.CreateScope();
+                using var scope = ServiceScopeFactory.CreateScope();
                 
                 var _ipDetailsRepository = scope.ServiceProvider.GetRequiredService<IIPDetailsRepository>();
 
@@ -57,10 +56,10 @@ namespace IPInfoWebAPI.Services
                     currentIds = currentIds.Skip(batchSize);
 
                     // update progress
-                    _batchJobHelperService.UpdateJobProgress(guid, $"{progress}/{ipDetails.Count()}");
+                    BatchJobHelperService.UpdateJobProgress(guid, $"{progress}/{ipDetails.Count()}");
 
                     // update cache
-                    await _ipRequestHandlerService.UpdateManyCacheAsync(currentIds.Take(batchSize));
+                    await IpRequestHandlerService.UpdateManyCacheAsync(currentIds.Take(batchSize));
                 }
 
             });

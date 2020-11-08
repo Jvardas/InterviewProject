@@ -2,7 +2,6 @@
 using IPInfoWebAPI.Models;
 using Microsoft.Extensions.Caching.Memory;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,20 +10,20 @@ namespace IPInfoWebAPI.Services
 {
     public class IPRequestHandlerService : IIPRequestHandlerService
     {
-        private readonly IIPInfoProvider _ipInfoProvider;
-        private readonly IMemoryCache _memoryCache;
+        private IIPInfoProvider IpInfoProvider { get; }
+        private IMemoryCache MemoryCache { get; }
 
         private static readonly SemaphoreSlim GetSemaphore = new SemaphoreSlim(1, 1);
 
         public IPRequestHandlerService(IIPInfoProvider ipInfoProvider, IMemoryCache memoryCache)
         {
-            _ipInfoProvider = ipInfoProvider;
-            _memoryCache = memoryCache;
+            IpInfoProvider = ipInfoProvider;
+            MemoryCache = memoryCache;
         }
 
         public IpDetail CheckCacheForIp(string ip)
         {
-            var ipd = _memoryCache.Get<IpDetail>(ip);
+            var ipd = MemoryCache.Get<IpDetail>(ip);
             if (ipd != null)
             {
                 return ipd;
@@ -39,7 +38,7 @@ namespace IPInfoWebAPI.Services
         {
             return await Task.Run(() =>
             {
-                var ipd = _ipInfoProvider.GetDetails(ip);
+                var ipd = IpInfoProvider.GetDetails(ip);
                 if (ipd != null)
                 {
                     var ipDetail = new IpDetail
@@ -76,7 +75,7 @@ namespace IPInfoWebAPI.Services
                     return ipd;
                 }
 
-                _memoryCache.Set(ip.Ip, ip, cacheEntryOptions);
+                MemoryCache.Set(ip.Ip, ip, cacheEntryOptions);
             }
             finally
             {

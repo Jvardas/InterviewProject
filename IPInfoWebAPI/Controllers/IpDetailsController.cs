@@ -15,17 +15,17 @@ namespace IPInfoWebAPI.Controllers
     [ApiController]
     public class IpDetailsController : ControllerBase
     {
-        private readonly IIPRequestHandlerService _ipRequestHandlerService;
-        private readonly IIPDetailsRepository _ipDetailsRepository;
-        private readonly IMapper _mapper;
-        private readonly IBatchRequestHandlerService _batchRequestHandlerService;
+        private IIPRequestHandlerService IpRequestHandlerService { get; }
+        private IIPDetailsRepository IpDetailsRepository { get; }
+        private IMapper Mapper { get; }
+        private IBatchRequestHandlerService BatchRequestHandlerService { get; }
 
         public IpDetailsController(IIPRequestHandlerService ipRequestHandlerService, IIPDetailsRepository ipDetailsRepository, IMapper mapper, IBatchRequestHandlerService batchRequestHandlerService)
         {
-            _ipRequestHandlerService = ipRequestHandlerService;
-            _ipDetailsRepository = ipDetailsRepository;
-            _mapper = mapper;
-            _batchRequestHandlerService = batchRequestHandlerService;
+            IpRequestHandlerService = ipRequestHandlerService;
+            IpDetailsRepository = ipDetailsRepository;
+            Mapper = mapper;
+            BatchRequestHandlerService = batchRequestHandlerService;
         }
 
         // GET: api/IpDetails
@@ -34,11 +34,11 @@ namespace IPInfoWebAPI.Controllers
         {
             List<IpDetailDTO> ipList = new List<IpDetailDTO>();
 
-            var ips = await _ipDetailsRepository.GetIpDetailsAsync();
+            var ips = await IpDetailsRepository.GetIpDetailsAsync();
             List<IpDetail> ipd = ips.ToList();
             foreach (var ip in ipd)
             {
-                ipList.Add(_mapper.Map<IpDetailDTO>(ip));
+                ipList.Add(Mapper.Map<IpDetailDTO>(ip));
             }
 
             return ipList;
@@ -57,29 +57,29 @@ namespace IPInfoWebAPI.Controllers
                 }
 
                 // first check the cache
-                var ipDetailsFromCache = _ipRequestHandlerService.CheckCacheForIp(ip);
+                var ipDetailsFromCache = IpRequestHandlerService.CheckCacheForIp(ip);
                 if (ipDetailsFromCache != null)
                 {
-                    var ipdDTO = _mapper.Map<IpDetailDTO>(ipDetailsFromCache);
+                    var ipdDTO = Mapper.Map<IpDetailDTO>(ipDetailsFromCache);
                     return ipdDTO;
                 }
 
                 // then check the db. If it is in there then update cache and return
-                var ipDetailsFromDb = await _ipDetailsRepository.GetIpDetailAsync(ip);
+                var ipDetailsFromDb = await IpDetailsRepository.GetIpDetailAsync(ip);
                 if (ipDetailsFromDb != null)
                 {
-                    await _ipRequestHandlerService.UpdateCacheAsync(ipDetailsFromDb);
-                    var ipdDTO = _mapper.Map<IpDetailDTO>(ipDetailsFromDb);
+                    await IpRequestHandlerService.UpdateCacheAsync(ipDetailsFromDb);
+                    var ipdDTO = Mapper.Map<IpDetailDTO>(ipDetailsFromDb);
                     return ipdDTO;
                 }
 
                 // lastly get the IP from library. If its found then update both db and cache
-                var ipDetailsFromLibrary = await _ipRequestHandlerService.CheckLibraryForIPAsync(ip);
+                var ipDetailsFromLibrary = await IpRequestHandlerService.CheckLibraryForIPAsync(ip);
                 if (ipDetailsFromLibrary != null)
                 {
-                    await _ipDetailsRepository.AddIpDetailsAsync(ipDetailsFromLibrary);
-                    await _ipRequestHandlerService.UpdateCacheAsync(ipDetailsFromLibrary);
-                    var ipdDTO = _mapper.Map<IpDetailDTO>(ipDetailsFromLibrary);
+                    await IpDetailsRepository.AddIpDetailsAsync(ipDetailsFromLibrary);
+                    await IpRequestHandlerService.UpdateCacheAsync(ipDetailsFromLibrary);
+                    var ipdDTO = Mapper.Map<IpDetailDTO>(ipDetailsFromLibrary);
                     return ipdDTO;
                 }
 
@@ -96,7 +96,7 @@ namespace IPInfoWebAPI.Controllers
         [Route("updateipsinbatch")]
         public ActionResult<Guid> UpdateIpDetailsWithBatches([FromBody] IEnumerable<IpDetail> ipDetails)
         {
-            var guid = _batchRequestHandlerService.IpDetailsUpdateJob(ipDetails);
+            var guid = BatchRequestHandlerService.IpDetailsUpdateJob(ipDetails);
             return guid;
         }
 
@@ -104,7 +104,7 @@ namespace IPInfoWebAPI.Controllers
         [HttpGet("jobprogress/{updateJobGuid:Guid}")]
         public ActionResult<string> GetUpdateJobProgress(Guid updateJobGuid)
         {
-            var progress = _batchRequestHandlerService.GetUpdateJobProgress(updateJobGuid);
+            var progress = BatchRequestHandlerService.GetUpdateJobProgress(updateJobGuid);
             if (progress != null)
             {
                 return progress;
