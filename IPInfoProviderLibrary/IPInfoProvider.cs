@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json.Linq;
 using System;
+using System.Linq;
 using System.IO;
 using System.Net;
 
@@ -24,11 +25,8 @@ namespace IPInfoProviderLibrary
 
                 // ensure that the conversion will return actuall numbers instead of null. This is made because the Project specifically mentioned that I have to use the interface as is.
                 // A better way I think was to just have lat and lon as double? in the interface
-                double lat = 0.0;
-                Double.TryParse(jobj["latitude"].ToString(), out lat);
-                
-                double lon = 0.0;
-                Double.TryParse(jobj["longitude"].ToString(), out lon);
+                Double.TryParse(jobj["latitude"].ToString(), out double lat);
+                Double.TryParse(jobj["longitude"].ToString(), out double lon);
 
                 IP ipd = new IP()
                 {
@@ -38,6 +36,13 @@ namespace IPInfoProviderLibrary
                     Latitude = lat,
                     Longitude = lon
                 };
+
+                // if all the details that I am getting back from IPStack are null then I am not interested of getting this entry in my DB
+                // that's why I am throwing an exception here
+                if (ipd.GetType().GetProperties().All(x => x.GetValue(ipd) is null && x.Name != "Latitude" && x.Name != "Longitude"))
+                {
+                    throw new IPServiceNotAvailableException("IP is not found");
+                }
 
                 return ipd;
             }
