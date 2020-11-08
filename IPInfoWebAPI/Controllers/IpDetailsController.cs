@@ -4,7 +4,6 @@ using IPInfoWebAPI.Models;
 using IPInfoWebAPI.Repositories;
 using IPInfoWebAPI.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -83,82 +82,11 @@ namespace IPInfoWebAPI.Controllers
             }
         }
 
-        // PUT: api/IpDetails/192.168.1.1
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for
-        // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
-        [HttpPut("{ip}")]
-        public async Task<IActionResult> PutIpDetail(string ip, IpDetail ipDetail)
-        {
-            if (ip != ipDetail.Ip)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(ipDetail).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!IpDetailExists(ip))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
-        }
-
-        // POST: api/IpDetails
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for
-        // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
+        // POST: api/UpdateIpDetailsWithBatches/[IpDetails1, IpDetails2,..., IpDetailsN]
         [HttpPost]
-        public async Task<ActionResult<IpDetailDTO>> PostIpDetail(IpDetail ipDetail)
+        public async Task<ActionResult<Guid>> UpdateIpDetailsWithBatches(IEnumerable<IpDetail> ipDetails)
         {
-            try
-            {
-                await _ipDetailsRepository.AddIpDetailsAsync(ipDetail);
-            }
-            catch (DbUpdateException)
-            {
-                if (IpDetailExists(ipDetail.Ip))
-                {
-                    return Conflict();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return CreatedAtAction("GetIpDetail", new { id = ipDetail.Ip }, ipDetail);
-        }
-
-        // DELETE: api/IpDetails/192.168.1.1
-        [HttpDelete("{ip}")]
-        public async Task<ActionResult<IpDetailDTO>> DeleteIpDetail(string ip)
-        {
-            var ipDetail = await _context.Ipdetails.FindAsync(ip);
-            if (ipDetail == null)
-            {
-                return NotFound();
-            }
-
-            _context.Ipdetails.Remove(ipDetail);
-            await _context.SaveChangesAsync();
-            var ipdDTO = _mapper.Map<IpDetailDTO>(ipDetail);
-            return ipdDTO;
-        }
-
-        private bool IpDetailExists(string ip)
-        {
-            return _context.Ipdetails.Any(e => e.Ip == ip);
+            throw new NotImplementedException();
         }
     }
 }
